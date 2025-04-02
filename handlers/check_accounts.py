@@ -1,16 +1,20 @@
-from telegram import Update
-from telegram.ext import ContextTypes
-from config import ADMIN_SESSIONS
+import json
+import os
+from telethon.sync import TelegramClient
+from config import SESSIONS_FILE
 
-async def check_accounts(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Displays the number of accounts logged in for an admin."""
-    user_id = update.effective_user.id
+def load_sessions():
+    """Load session data from file."""
+    if os.path.exists(SESSIONS_FILE):
+        with open(SESSIONS_FILE, "r") as f:
+            return json.load(f)
+    return {}
 
-    admin_accounts = len(ADMIN_SESSIONS.get(user_id, []))
-    total_accounts = sum(len(sessions) for sessions in ADMIN_SESSIONS.values())
+def check_admin_accounts(admin_id):
+    """Return the number of accounts added by a specific admin."""
+    sessions = load_sessions()
+    return sum(1 for session in sessions.values() if session.get("admin_id") == admin_id)
 
-    message = f"📊 **Your Accounts:** {admin_accounts}\n"
-    message += f"🌍 **Total Bot Accounts:** {total_accounts}"
-
-    await update.callback_query.answer()
-    await update.callback_query.message.reply_text(message)
+def check_total_accounts():
+    """Return the total number of logged-in accounts."""
+    return len(load_sessions())
